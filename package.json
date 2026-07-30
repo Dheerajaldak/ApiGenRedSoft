@@ -2,7 +2,11 @@
   "name": "apigen-redsoft",
   "private": true,
   "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "build": "npm --prefix frontend install && npm --prefix frontend run build"
+    "build": "npm run build --prefix frontend"
   }
 }
