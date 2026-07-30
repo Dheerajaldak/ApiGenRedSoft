@@ -1,5 +1,7 @@
 {
-  "buildCommand": "(cd frontend 2>/dev/null || true) && npm run build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist",
   "framework": "vite",
   "rewrites": [
     {
