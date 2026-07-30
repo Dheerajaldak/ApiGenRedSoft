@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "Backend for API Key Generation, Management, and Rate Limiting System",
   "main": "src/server.ts",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "@types/cors": "^2.8.17",
