@@ -7,7 +7,16 @@ import {
   PlaygroundTestResult,
 } from '../types/apiKey';
 
-const API_BASE = '/api';
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    const cleaned = envUrl.replace(/\/$/, '');
+    return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 export const apiService = {
   // Fetch all API keys
