@@ -7,6 +7,6 @@
     "backend"
   ],
   "scripts": {
-    "build": "npm run build --prefix frontend"
+    "build": "(cd frontend 2>/dev/null || true) && npm run build"
   }
 }
