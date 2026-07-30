@@ -13,19 +13,37 @@ const getApiBase = () => {
     const cleaned = envUrl.replace(/\/$/, '');
     return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
   }
-  return '/api';
+  // Default to user's deployed Render backend
+  return 'https://apigenredsoft.onrender.com/api';
 };
 
 const API_BASE = getApiBase();
+
+const safeParseJson = async (res: Response, defaultError: string) => {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text().catch(() => '');
+    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+      throw new Error(
+        `Backend API endpoint (${res.url}) returned HTML instead of JSON. Ensure backend at https://apigenredsoft.onrender.com is active.`
+      );
+    }
+    throw new Error(defaultError);
+  }
+  return await res.json();
+};
 
 export const apiService = {
   // Fetch all API keys
   async getKeys(): Promise<IApiKey[]> {
     const res = await fetch(`${API_BASE}/keys`);
     if (!res.ok) {
-      throw new Error(`Failed to fetch API keys (${res.status})`);
+      const data = await safeParseJson(res, `Failed to fetch API keys (${res.status})`).catch((err) => {
+        throw err;
+      });
+      throw new Error(data.message || `Failed to fetch API keys (${res.status})`);
     }
-    const data = await res.json();
+    const data = await safeParseJson(res, 'Invalid JSON response from server');
     return data.keys || [];
   },
 
@@ -36,7 +54,7 @@ export const apiService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    const data = await safeParseJson(res, 'Failed to create API key');
     if (!res.ok) {
       throw new Error(data.message || 'Failed to create API key');
     }
@@ -50,7 +68,7 @@ export const apiService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    const data = await safeParseJson(res, 'Failed to update API key');
     if (!res.ok) {
       throw new Error(data.message || 'Failed to update API key');
     }
@@ -62,7 +80,7 @@ export const apiService = {
     const res = await fetch(`${API_BASE}/keys/${id}/revoke`, {
       method: 'POST',
     });
-    const data = await res.json();
+    const data = await safeParseJson(res, 'Failed to revoke API key');
     if (!res.ok) {
       throw new Error(data.message || 'Failed to revoke API key');
     }
@@ -74,7 +92,7 @@ export const apiService = {
     const res = await fetch(`${API_BASE}/keys/${id}/roll`, {
       method: 'POST',
     });
-    const data = await res.json();
+    const data = await safeParseJson(res, 'Failed to roll API key');
     if (!res.ok) {
       throw new Error(data.message || 'Failed to roll API key');
     }
@@ -87,7 +105,7 @@ export const apiService = {
       method: 'DELETE',
     });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      const data = await safeParseJson(res, 'Failed to delete API key').catch(() => ({}));
       throw new Error(data.message || 'Failed to delete API key');
     }
   },
@@ -110,7 +128,10 @@ export const apiService = {
       'retry-after': res.headers.get('retry-after') || '',
     };
 
-    const data = await res.json().catch(() => ({}));
+    const data = await safeParseJson(res, 'Failed to connect to AI endpoint').catch((err) => ({
+      error: 'Connection Error',
+      message: err.message,
+    }));
 
     return {
       success: res.ok,
